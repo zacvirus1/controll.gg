@@ -5,15 +5,13 @@ set -e
 
 ########################################################
 # 
-#         Pterodactyl-AutoThemes Installation
-#
-#         Created and maintained by Ferks-FK
-#
-#            Protected by MIT License
+#  Script de Instalação do Pterodactyl-AutoThemes
+#  Adaptado para uso pela Rest Api Sistemas
 #
 ########################################################
 
-# Get the latest version before running the script #
+# Obtenha a versão mais recente antes de executar o script #
+
 get_release() {
 curl --silent \
   -H "Accept: application/vnd.github.v3+json" \
@@ -129,7 +127,7 @@ password_input() {
   eval "$__resultvar="'$result'""
 }
 
-# OS check #
+# Verificação do sistema operacional #
 check_distro() {
   if [ -f /etc/os-release ]; then
     . /etc/os-release
@@ -161,7 +159,7 @@ check_distro() {
 }
 
 only_upgrade_panel() {
-print "Updating your panel, please wait..."
+print "Atualizando o seu painel, por favor, aguarde..."
 
 cd /var/www/controlpanel
 php artisan down
@@ -183,7 +181,7 @@ php artisan queue:restart
 
 php artisan up
 
-print "Your panel has been successfully updated to version ${YELLOW}${LATEST_VERSION}${RESET}."
+print "Seu painel foi atualizado com sucesso para a versão ${YELLOW}${LATEST_VERSION}${RESET}."
 exit 1
 }
 
@@ -212,7 +210,7 @@ systemctl enable php-fpm --now
 }
 
 check_compatibility() {
-print "Checking if your system is compatible with the script..."
+print "Verificando se o seu sistema é compatível com o script..."
 sleep 2
 
 case "$OS" in
@@ -239,30 +237,31 @@ case "$OS" in
 esac
 
 if [ "$SUPPORTED" == true ]; then
-    print "$OS $OS_VER is supported!"
+    print "$OS $OS_VER é suportado!"
   else
-    print_error "$OS $OS_VER is not supported!"
+    print_error "$OS $OS_VER não é suportado!"
     exit 1
 fi
 }
 
+
 ask_ssl() {
-echo -ne "* Would you like to configure ssl for your domain? (y/N): "
+echo -ne "* Deseja configurar SSL para o seu domínio? (s/N): "
 read -r CONFIGURE_SSL
-if [[ "$CONFIGURE_SSL" == [Yy] ]]; then
+if [[ "$CONFIGURE_SSL" == [Ss] ]]; then
     CONFIGURE_SSL=true
-    email_input EMAIL "Enter your email address to create the SSL certificate for your domain: " "Email cannot by empty or invalid!"
+    email_input EMAIL "Digite seu endereço de e-mail para criar o certificado SSL para o seu domínio: " "E-mail não pode ser vazio ou inválido!"
 fi
 }
 
 install_composer() {
-print "Installing Composer..."
+print "Instalando o Composer..."
 
 curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 }
 
 download_files() {
-print "Downloading Necessary Files..."
+print "Baixando Arquivos Necessários..."
 
 git clone -q https://github.com/Ctrlpanel-gg/panel.git /var/www/controlpanel
 rm -rf /var/www/controlpanel/.env.example
@@ -274,7 +273,7 @@ COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader
 }
 
 set_permissions() {
-print "Setting Necessary Permissions..."
+print "Configurando Permissões Necessárias..."
 
 case "$OS" in
   debian | ubuntu)
@@ -290,7 +289,7 @@ chmod -R 755 storage/* bootstrap/cache/
 }
 
 configure_environment() {
-print "Configuring the base file..."
+print "Configurando o arquivo base..."
 
 sed -i -e "s@<timezone>@$TIMEZONE@g" /var/www/controlpanel/.env.example
 sed -i -e "s@<db_host>@$DB_HOST@g" /var/www/controlpanel/.env.example
@@ -301,20 +300,20 @@ sed -i -e "s|<db_pass>|$DB_PASS|g" /var/www/controlpanel/.env.example
 }
 
 check_database_info() {
-# Check if mysql has a password
+# Verifica se o MySQL tem uma senha
 if ! mysql -u root -e "SHOW DATABASES;" &>/dev/null; then
   MYSQL_PASSWORD=true
-  print_warning "It looks like your MySQL has a password, please enter it now"
-  password_input MYSQL_ROOT_PASS "MySQL Password: " "Password cannot by empty!"
+  print_warning "Parece que o seu MySQL tem uma senha, por favor, digite-a agora"
+  password_input MYSQL_ROOT_PASS "Senha do MySQL: " "Senha não pode ser vazia!"
   if mysql -u root -p"$MYSQL_ROOT_PASS" -e "SHOW DATABASES;" &>/dev/null; then
-      print "The password is correct, continuing..."
+      print "A senha está correta, continuando..."
     else
-      print_warning "The password is not correct, please re-enter the password"
+      print_warning "A senha não está correta, por favor, digite a senha novamente"
       check_database_info
   fi
 fi
 
-# Checks to see if the chosen user already exists
+# Verifica se o usuário escolhido já existe
 if [ "$MYSQL_PASSWORD" == true ]; then
     mysql -u root -p"$MYSQL_ROOT_PASS" -e "SELECT User FROM mysql.user;" 2>/dev/null >> "$INFORMATIONS/check_user.txt"
   else
@@ -322,13 +321,14 @@ if [ "$MYSQL_PASSWORD" == true ]; then
 fi
 sed -i '1d' "$INFORMATIONS/check_user.txt"
 while grep -q "$DB_USER" "$INFORMATIONS/check_user.txt"; do
-  print_warning "Oops, it looks like user ${GREEN}$DB_USER${RESET} already exists in your MySQL, please use another one."
-  echo -n "* Database User: "
+  print_warning "Oops, parece que o usuário ${GREEN}$DB_USER${RESET} já existe no seu MySQL, por favor, use outro."
+  echo -n "* Usuário do Banco de Dados: "
   read -r DB_USER
 done
 rm -r "$INFORMATIONS/check_user.txt"
 
-# Check if the database already exists in mysql
+
+# Verificar se o banco de dados já existe no MySQL
 if [ "$MYSQL_PASSWORD" == true ]; then
     mysql -u root -p"$MYSQL_ROOT_PASS" -e "SHOW DATABASES;" 2>/dev/null >> "$INFORMATIONS/check_db.txt"
   else
@@ -336,19 +336,19 @@ if [ "$MYSQL_PASSWORD" == true ]; then
 fi
 sed -i '1d' "$INFORMATIONS/check_db.txt"
 while grep -q "$DB_NAME" "$INFORMATIONS/check_db.txt"; do
-  print_warning "Oops, it looks like the database ${GREEN}$DB_NAME${RESET} already exists in your MySQL, please use another one."
-  echo -n "* Database Name: "
+  print_warning "Oops, parece que o banco de dados ${GREEN}$DB_NAME${RESET} já existe no seu MySQL, por favor, use outro nome."
+  echo -n "* Nome do Banco de Dados: "
   read -r DB_NAME
 done
 rm -r "$INFORMATIONS/check_db.txt"
 }
 
 configure_database() {
-print "Configuring Database..."
+print "Configurando o Banco de Dados..."
 
 if [ "$MYSQL_PASSWORD" == true ]; then
     mysql -u root -p"$MYSQL_ROOT_PASS" -e "CREATE DATABASE ${DB_NAME};" &>/dev/null
-    mysql -u root -p"$MYSQL_ROOT_PASS" -e "CREATE USER '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${DB_PASS}';" &>/dev/null
+    mysql -u root -p"$MYSQL_ROOT_PASS" -e "CREATE USER '${DB_USER}'@'${DB_HOST}' IDENTIFICADO POR '${DB_PASS}';" &>/dev/null
     mysql -u root -p"$MYSQL_ROOT_PASS" -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'${DB_HOST}';" &>/dev/null
     mysql -u root -p"$MYSQL_ROOT_PASS" -e "FLUSH PRIVILEGES;" &>/dev/null
   else
@@ -360,7 +360,7 @@ fi
 }
 
 configure_webserver() {
-print "Configuring Web-Server..."
+print "Configurando o Servidor Web..."
 
 if [ "$CONFIGURE_SSL" == true ]; then
     WEB_FILE="controlpanel_ssl.conf"
@@ -393,7 +393,7 @@ case "$OS" in
   ;;
 esac
 
-# Kill nginx if it is listening on port 80 before it starts, fixed a port usage bug.
+# Matar o nginx se estiver ouvindo na porta 80 antes de iniciar, corrigido um bug de uso de porta.
 if netstat -tlpn | grep 80 &>/dev/null; then
   killall nginx
 fi
@@ -405,8 +405,9 @@ if [ "$(systemctl is-active --quiet nginx)" == "active" ]; then
 fi
 }
 
+
 configure_firewall() {
-print "Configuring the firewall..."
+print "Configurando o firewall..."
 
 case "$OS" in
   debian | ubuntu)
@@ -435,7 +436,7 @@ esac
 }
 
 configure_ssl() {
-print "Configuring SSL..."
+print "Configurando SSL..."
 
 FAILED=false
 
@@ -460,23 +461,24 @@ if [ ! -d "/etc/letsencrypt/live/$FQDN/" ] || [ "$FAILED" == true ]; then
     if [ "$(systemctl is-active --quiet nginx)" == "active" ]; then
       systemctl stop nginx
     fi
-    print_warning "The script failed to generate the SSL certificate automatically, trying alternative command..."
+    print_warning "O script falhou ao gerar automaticamente o certificado SSL, tentando um comando alternativo..."
     FAILED=false
 
     certbot certonly --standalone --non-interactive --agree-tos --quiet --no-eff-email --email "$EMAIL" -d "$FQDN" || FAILED=true
 
     if [ -d "/etc/letsencrypt/live/$FQDN/" ] || [ "$FAILED" == false ]; then
-        print "The script was able to successfully generate the SSL certificate!"
+        print "O script conseguiu gerar com sucesso o certificado SSL!"
       else
-        print_warning "The script failed to generate the certificate, try to do it manually."
+        print_warning "O script falhou ao gerar o certificado, tente fazer isso manualmente."
     fi
   else
-    print "The script was able to successfully generate the SSL certificate!"
+    print "O script conseguiu gerar com sucesso o certificado SSL!"
 fi
 }
 
+
 configure_crontab() {
-print "Configuring Crontab"
+print "Configurando Crontab"
 
 crontab -l | {
   cat
@@ -485,7 +487,7 @@ crontab -l | {
 }
 
 configure_service() {
-print "Configuring ControlPanel Service..."
+print "Configurando o Serviço ControlPanel..."
 
 curl -so /etc/systemd/system/controlpanel.service "$GITHUB_URL"/configs/controlpanel.service
 
@@ -502,88 +504,89 @@ systemctl enable controlpanel.service --now
 }
 
 deps_ubuntu() {
-print "Installing dependencies for Ubuntu ${OS_VER}"
+print "Instalando dependências para Ubuntu ${OS_VER}"
 
-# Add "add-apt-repository" command
+# Adicionar o comando "add-apt-repository"
 apt-get install -y software-properties-common curl apt-transport-https ca-certificates gnupg
 
-# Add additional repositories for PHP, Redis, and MariaDB
+# Adicionar repositórios adicionais para PHP, Redis e MariaDB
 LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php
 curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
 
-# Update repositories list
+# Atualizar lista de repositórios
 apt-get update -y && apt-get upgrade -y
 
-# Add universe repository if you are on Ubuntu 18.04
+# Adicionar repositório universe se estiver no Ubuntu 18.04
 [ "$OS_VER_MAJOR" == "18" ] && apt-add-repository universe
 
-# Install Dependencies
+# Instalar Dependências
 apt-get install -y php8.1 php8.1-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip,intl} mariadb-server nginx tar unzip git redis-server psmisc net-tools
 
-# Enable services
+# Ativar serviços
 enable_services_debian_based
 }
 
 deps_debian() {
-print "Installing dependencies for Debian ${OS_VER}"
+print "Instalando dependências para Debian ${OS_VER}"
 
-# MariaDB need dirmngr
+# MariaDB precisa do dirmngr
 apt-get install -y dirmngr
 
-# install PHP 8.0 using sury's repo
+# Instalar PHP 8.0 usando o repositório do sury
 apt-get install -y ca-certificates apt-transport-https lsb-release
 wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
 echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
 
-# Add the MariaDB repo
+# Adicionar o repositório MariaDB
 curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash
 
-# Update repositories list
+# Atualizar lista de repositórios
 apt-get update -y && apt-get upgrade -y
 
-# Install Dependencies
+
+# Instalar Dependências
 apt-get install -y php8.1 php8.1-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip,intl} mariadb-server nginx tar unzip git redis-server psmisc net-tools
 
-# Enable services
+# Ativar serviços
 enable_services_debian_based
 }
 
 deps_centos() {
-print "Installing dependencies for CentOS ${OS_VER}"
+print "Instalando dependências para CentOS ${OS_VER}"
 
 if [ "$OS_VER_MAJOR" == "7" ]; then
-    # SELinux tools
+    # Ferramentas do SELinux
     yum install -y policycoreutils policycoreutils-python selinux-policy selinux-policy-targeted libselinux-utils setroubleshoot-server setools setools-console mcstrans
     
-    # Install MariaDB
+    # Instalar MariaDB
     curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash
 
-    # Add remi repo (php8.1)
+    # Adicionar repositório remi (php8.1)
     yum install -y epel-release http://rpms.remirepo.net/enterprise/remi-release-7.rpm
     yum install -y yum-utils
     yum-config-manager -y --disable remi-php54
     yum-config-manager -y --enable remi-php81
 
-    # Install dependencies
+    # Instalar dependências
     yum -y install php php-common php-tokenizer php-curl php-fpm php-cli php-json php-mysqlnd php-mcrypt php-gd php-mbstring php-pdo php-zip php-bcmath php-dom php-opcache php-intl mariadb-server nginx curl tar zip unzip git redis psmisc net-tools
     yum update -y
   elif [ "$OS_VER_MAJOR" == "8" ]; then
-    # SELinux tools
+    # Ferramentas do SELinux
     yum install -y policycoreutils selinux-policy selinux-policy-targeted setroubleshoot-server setools setools-console mcstrans
     
-    # Add remi repo (php8.1)
+    # Adicionar repositório remi (php8.1)
     yum install -y epel-release http://rpms.remirepo.net/enterprise/remi-release-8.rpm
     yum module enable -y php:remi-8.1
 
-    # Install MariaDB
+    # Instalar MariaDB
     yum install -y mariadb mariadb-server
 
-    # Install dependencies
+    # Instalar dependências
     yum install -y php php-common php-fpm php-cli php-json php-mysqlnd php-gd php-mbstring php-pdo php-zip php-bcmath php-dom php-opcache php-intl mariadb-server nginx curl tar zip unzip git redis psmisc net-tools
     yum update -y
 fi
 
-# Enable services
+# Ativar serviços
 enable_services_centos_based
 
 # SELinux
@@ -591,7 +594,7 @@ allow_selinux
 }
 
 install_controlpanel() {
-print "Starting installation, this may take a few minutes, please wait."
+print "Iniciando a instalação, isso pode levar alguns minutos, por favor, aguarde."
 sleep 2
 
 case "$OS" in
@@ -622,149 +625,151 @@ configure_webserver
 bye
 }
 
+
 main() {
-# Check if it is already installed and check the version #
+# Verificar se já está instalado e verificar a versão #
 if [ -d "/var/www/controlpanel" ]; then
   update_variables
   if [ "$CLIENT_VERSION" != "$LATEST_VERSION" ]; then
-      print_warning "You already have the panel installed."
-      echo -ne "* The script detected that the version of your panel is ${YELLOW}$CLIENT_VERSION${RESET}, the latest version of the panel is ${YELLOW}$LATEST_VERSION${RESET}, would you like to upgrade? (y/N): "
+      print_warning "Você já possui o painel instalado."
+      echo -ne "* O script detectou que a versão do seu painel é ${YELLOW}$CLIENT_VERSION${RESET}, a versão mais recente do painel é ${YELLOW}$LATEST_VERSION${RESET}, você gostaria de atualizar? (y/N): "
       read -r UPGRADE_PANEL
       if [[ "$UPGRADE_PANEL" =~ [Yy] ]]; then
           check_distro
           only_upgrade_panel
         else
-          print "Ok, bye..."
+          print "Ok, até logo..."
           exit 1
       fi
     else
-      print_warning "The panel is already installed, aborting..."
+      print_warning "O painel já está instalado, abortando..."
       exit 1
   fi
 fi
 
-# Check if pterodactyl is installed #
+# Verificar se o Pterodactyl está instalado #
 if [ ! -d "/var/www/pterodactyl" ]; then
-  print_warning "An installation of pterodactyl was not found in the directory $YELLOW/var/www/pterodactyl${RESET}"
-  echo -ne "* Is your pterodactyl panel installed on this machine? (y/N): "
+  print_warning "Não foi encontrada uma instalação do Pterodactyl no diretório $YELLOW/var/www/pterodactyl${RESET}"
+  echo -ne "* Seu painel Pterodactyl está instalado nesta máquina? (y/N): "
   read -r PTERO_DIR
   if [[ "$PTERO_DIR" =~ [Yy] ]]; then
-    echo -e "* ${GREEN}EXAMPLE${RESET}: /var/www/myptero"
-    echo -ne "* Enter the directory from where your pterodactyl panel is installed: "
+    echo -e "* ${GREEN}EXEMPLO${RESET}: /var/www/meuptero"
+    echo -ne "* Informe o diretório onde seu painel Pterodactyl está instalado: "
     read -r PTERO_DIR
     if [ -f "$PTERO_DIR/config/app.php" ]; then
-        print "Pterodactyl was found, continuing..."
+        print "Pterodactyl encontrado, continuando..."
       else
-        print_error "Pterodactyl not found, running script again..."
+        print_error "Pterodactyl não encontrado, executando o script novamente..."
         main
     fi
   fi
 fi
 
-# Check Distro #
+# Verificar Distribuição #
 check_distro
 
-# Check if the OS is compatible #
+# Verificar se o SO é compatível #
 check_compatibility
 
-# Set FQDN for panel #
+# Definir FQDN para o painel #
 while [ -z "$FQDN" ]; do
-  print_warning "Do not use a domain that is already in use by another application, such as the domain of your pterodactyl."
-  echo -ne "* Set the Hostname/FQDN for panel (${YELLOW}panel.example.com${RESET}): "
+  print_warning "Não use um domínio que já está sendo usado por outra aplicação, como o domínio do seu Pterodactyl."
+  echo -ne "* Defina o Nome do Host/FQDN para o painel (${YELLOW}painel.exemplo.com${RESET}): "
   read -r FQDN
-  [ -z "$FQDN" ] && print_error "FQDN cannot be empty"
+  [ -z "$FQDN" ] && print_error "FQDN não pode ficar vazio"
 done
 
-# Install the packages to check FQDN and ask about SSL only if FQDN is a string #
+# Instalar os pacotes para verificar o FQDN e perguntar sobre SSL somente se o FQDN for uma string #
 if [[ "$FQDN" == [a-zA-Z]* ]]; then
   ask_ssl
 fi
 
-# Set host of the database #
-echo -ne "* Enter the host of the database (${YELLOW}127.0.0.1${RESET}): "
+
+# Definir o host do banco de dados #
+echo -ne "* Informe o host do banco de dados (${YELLOW}127.0.0.1${RESET}): "
 read -r DB_HOST
 [ -z "$DB_HOST" ] && DB_HOST="127.0.0.1"
 
-# Set port of the database #
-echo -ne "* Enter the port of the database (${YELLOW}3306${RESET}): "
+# Definir a porta do banco de dados #
+echo -ne "* Informe a porta do banco de dados (${YELLOW}3306${RESET}): "
 read -r DB_PORT
 [ -z "$DB_PORT" ] && DB_PORT="3306"
 
-# Set name of the database #
-echo -ne "* Enter the name of the database (${YELLOW}controlpanel${RESET}): "
+# Definir o nome do banco de dados #
+echo -ne "* Informe o nome do banco de dados (${YELLOW}controlpanel${RESET}): "
 read -r DB_NAME
 [ -z "$DB_NAME" ] && DB_NAME="controlpanel"
 
-# Set user of the database #
-echo -ne "* Enter the username of the database (${YELLOW}controlpaneluser${RESET}): "
+# Definir o usuário do banco de dados #
+echo -ne "* Informe o nome de usuário do banco de dados (${YELLOW}controlpaneluser${RESET}): "
 read -r DB_USER
 [ -z "$DB_USER" ] && DB_USER="controlpaneluser"
 
-# Set pass of the database #
-password_input DB_PASS "Enter the password of the database (Enter for random password): " "Password cannot by empty!" "$RANDOM_PASSWORD"
+# Definir a senha do banco de dados #
+password_input DB_PASS "Informe a senha do banco de dados (Pressione Enter para uma senha aleatória): " "A senha não pode ficar vazia!" "$RANDOM_PASSWORD"
 
-# Ask Time-Zone #
-echo -e "* List of valid time-zones here: ${YELLOW}$(hyperlink "http://php.net/manual/en/timezones.php")${RESET}"
-echo -ne "* Select Time-Zone (${YELLOW}America/New_York${RESET}): "
+# Perguntar sobre o Fuso Horário #
+echo -e "* Lista de fusos horários válidos aqui: ${YELLOW}$(hyperlink "http://php.net/manual/en/timezones.php")${RESET}"
+echo -ne "* Selecione o Fuso Horário (${YELLOW}America/New_York${RESET}): "
 read -r TIMEZONE
 [ -z "$TIMEZONE" ] && TIMEZONE="America/New_York"
 
-# Summary #
+# Resumo #
 echo
 print_brake 75
 echo
-echo -e "* Hostname/FQDN: $FQDN"
-echo -e "* Database Host: $DB_HOST"
-echo -e "* Database Port: $DB_PORT"
-echo -e "* Database Name: $DB_NAME"
-echo -e "* Database User: $DB_USER"
-echo -e "* Database Pass: (censored)"
-echo -e "* Time-Zone: $TIMEZONE"
-echo -e "* Configure SSL: $CONFIGURE_SSL"
+echo -e "* Nome do Host/FQDN: $FQDN"
+echo -e "* Hospedagem do Banco de Dados: $DB_HOST"
+echo -e "* Porta do Banco de Dados: $DB_PORT"
+echo -e "* Nome do Banco de Dados: $DB_NAME"
+echo -e "* Usuário do Banco de Dados: $DB_USER"
+echo -e "* Senha do Banco de Dados: (censurada)"
+echo -e "* Fuso Horário: $TIMEZONE"
+echo -e "* Configurar SSL: $CONFIGURE_SSL"
 echo
 print_brake 75
 echo
 
-# Create the logs directory #
+# Criar o diretório de logs #
 mkdir -p $INFORMATIONS
 
-# Write the information to a log #
+# Escrever as informações em um log #
 {
-  echo -e "* Hostname/FQDN: $FQDN"
-  echo -e "* Database Host: $DB_HOST"
-  echo -e "* Database Port: $DB_PORT"
-  echo -e "* Database Name: $DB_NAME"
-  echo -e "* Database User: $DB_USER"
-  echo -e "* Database Pass: $DB_PASS"
+  echo -e "* Nome do Host/FQDN: $FQDN"
+  echo -e "* Hospedagem do Banco de Dados: $DB_HOST"
+  echo -e "* Porta do Banco de Dados: $DB_PORT"
+  echo -e "* Nome do Banco de Dados: $DB_NAME"
+  echo -e "* Usuário do Banco de Dados: $DB_USER"
+  echo -e "* Senha do Banco de Dados: $DB_PASS"
   echo ""
-  echo "* After using this file, delete it immediately!"
+  echo "* Após usar este arquivo, exclua-o imediatamente!"
 } > $INFORMATIONS/install.info
 
-# Confirm all the choices #
-echo -n "* Initial settings complete, do you want to continue to the installation? (y/N): "
+# Confirmar todas as escolhas #
+echo -n "* Configurações iniciais concluídas, deseja continuar com a instalação? (y/N): "
 read -r CONTINUE_INSTALL
 [[ "$CONTINUE_INSTALL" =~ [Yy] ]] && install_controlpanel
-[[ "$CONTINUE_INSTALL" == [Nn] ]] && print_error "Installation aborted!" && exit 1
+[[ "$CONTINUE_INSTALL" == [Nn] ]] && print_error "Instalação abortada!" && exit 1
 }
 
 bye() {
 echo
 print_brake 90
 echo
-echo -e "${GREEN}* The script has finished the installation process!${RESET}"
+echo -e "${GREEN}* O script concluiu o processo de instalação!${RESET}"
 
 [ "$CONFIGURE_SSL" == true ] && APP_URL="https://$FQDN"
 [ "$CONFIGURE_SSL" == false ] && APP_URL="http://$FQDN"
 
-echo -e "${GREEN}* To complete the configuration of your panel, go to ${YELLOW}$(hyperlink "$APP_URL/install")${RESET}"
-echo -e "${GREEN}* Thank you for using this script!"
+echo -e "${GREEN}* Para completar a configuração do seu painel, vá para ${YELLOW}$(hyperlink "$APP_URL/install")${RESET}"
+echo -e "${GREEN}* Obrigado por usar este script!"
 echo -e "* Wiki: ${YELLOW}$(hyperlink "$WIKI_LINK")${RESET}"
-echo -e "${GREEN}* Support Group: ${YELLOW}$(hyperlink "$SUPPORT_LINK")${RESET}"
-echo -e "${GREEN}*${RESET} If you have questions about the information that is requested on the installation page\nall the necessary information about it is written in: (${YELLOW}$INFORMATIONS/install.info${RESET})."
+echo -e "${GREEN}* Grupo de Suporte: ${YELLOW}$(hyperlink "$SUPPORT_LINK")${RESET}"
+echo -e "${GREEN}*${RESET} Se tiver dúvidas sobre as informações solicitadas na página de instalação,\ntodas as informações necessárias estão escritas em: (${YELLOW}$INFORMATIONS/install.info${RESET})."
 echo
 print_brake 90
 echo
 }
 
-# Exec Script #
+# Executar o Script #
 main
