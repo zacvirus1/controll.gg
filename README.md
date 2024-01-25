@@ -1,9 +1,6 @@
 ```markdown
 <h1 align="center">Instalador do Painel de Controle</h1>
 
-![Discord](https://img.shields.io/discord/876934115302178876?label=DISCORD&style=for-the-badge)
-![Contribuidores](https://img.shields.io/github/contributors/Ferks-FK/ControlPanel-Installer?style=for-the-badge)
-
 Bem-vindo ao Instalador do Painel de Controle, um script independente para a instalação do [ControlPanel](https://ctrlpanel.gg/). Este script é orgulhosamente desenvolvido por [Rest Api Sistemas](https://github.com/RestApiSistemas) e não está afiliado ao projeto oficial do ControlPanel.
 
 <h1 align="center">Recursos</h1>
