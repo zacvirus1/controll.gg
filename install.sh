@@ -763,6 +763,7 @@ echo -e "${GREEN}* O script concluiu o processo de instalação!${RESET}"
 
 echo -e "${GREEN}* Para completar a configuração do seu painel, vá para ${YELLOW}$(hyperlink "$APP_URL/install")${RESET}"
 echo -e "${GREEN}* Obrigado por usar este script!"
+echo
 print_brake 90
 echo
 }
