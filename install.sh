@@ -763,10 +763,6 @@ echo -e "${GREEN}* O script concluiu o processo de instalação!${RESET}"
 
 echo -e "${GREEN}* Para completar a configuração do seu painel, vá para ${YELLOW}$(hyperlink "$APP_URL/install")${RESET}"
 echo -e "${GREEN}* Obrigado por usar este script!"
-echo -e "* Wiki: ${YELLOW}$(hyperlink "$WIKI_LINK")${RESET}"
-echo -e "${GREEN}* Grupo de Suporte: ${YELLOW}$(hyperlink "$SUPPORT_LINK")${RESET}"
-echo -e "${GREEN}*${RESET} Se tiver dúvidas sobre as informações solicitadas na página de instalação,\ntodas as informações necessárias estão escritas em: (${YELLOW}$INFORMATIONS/install.info${RESET})."
-echo
 print_brake 90
 echo
 }
